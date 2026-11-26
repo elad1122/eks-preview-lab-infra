@@ -15,7 +15,7 @@ The application it deploys lives in **[elad1122/eks-preview-lab](https://github.
 
 ```
 eks-preview-lab-infra/
-├── bootstrap/          # Plan steps 2–3: state bucket, GitHub OIDC provider, gha-* roles, permission boundary
+├── bootstrap/          # Plan steps 2–3: state bucket, CI auth (ci_auth = "oidc" | "iam_user"), gha-* roles, permission boundary
 ├── modules/
 │   ├── vpc/            # Step 4: 2 AZs, public + private subnets, no NAT (cost trade-off)
 │   └── eks/            # Step 5: cluster, Spot node group, add-ons, access entries, LB controller
@@ -53,8 +53,18 @@ on:
 jobs:
   preview:
     uses: elad1122/eks-preview-lab-infra/.github/workflows/preview.yml@main
-    permissions: { id-token: write, contents: read, pull-requests: write }
+    secrets: inherit   # passes the CI_PREVIEW_* key (lab mode)
+    permissions: { id-token: write, contents: read, pull-requests: write }   # id-token is used in oidc mode
 ```
+
+## CI authentication
+
+The design targets **GitHub OIDC**. In an organization, the account baseline provides the identity provider and this repo only references it. This lab account can't create identity providers, so `bootstrap/` runs with `ci_auth = "iam_user"`:
+- two CI users, `ci-infra` and `ci-preview`;
+- each one can do **nothing except assume its own role**;
+- their access keys are created in the console and stored as GitHub secrets, never in Terraform state.
+
+The design, the trade-offs and the migration path are in [CI-AUTHENTICATION.md](https://github.com/elad1122/eks-preview-lab/blob/main/docs/CI-AUTHENTICATION.md).
 
 ## Session routine
 
