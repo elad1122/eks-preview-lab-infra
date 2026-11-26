@@ -1,0 +1,23 @@
+# Starting point: format check on every PR and push. Add validate, tflint,
+# checkov and `terraform plan` (through the gha-infra-plan OIDC role) as the
+# Terraform code grows. See plan steps 3 and 9.
+name: Infra CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  fmt:
+    name: terraform fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+      - run: terraform fmt -check -recursive
